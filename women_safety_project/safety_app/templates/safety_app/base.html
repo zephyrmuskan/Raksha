@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aurora | Women Safety System</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* Guardian Modal */
+        .guardian-alert {
+            position: fixed;
+            top: 20px;
+            right: -450px;
+            width: 380px;
+            background: rgba(20, 10, 15, 0.85);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--danger);
+            border-left: 5px solid var(--danger);
+            border-radius: 16px;
+            padding: 24px;
+            color: white;
+            z-index: 9999;
+            box-shadow: 0 15px 40px rgba(255, 8, 68, 0.4);
+            transition: right 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .guardian-alert.active {
+            right: 20px;
+            animation: pulse-border 2s infinite;
+        }
+
+        .guardian-alert h3 {
+            margin-top: 0;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--danger);
+            text-shadow: 0 0 10px rgba(255, 8, 68, 0.5);
+            font-weight: 800;
+        }
+
+        .alert-distance {
+            font-size: 1.8em;
+            font-weight: 800;
+            color: #fff;
+            margin: 10px 0;
+            text-align: center;
+            background: rgba(255, 8, 68, 0.2);
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px dashed var(--danger);
+        }
+
+        .guardian-alert button {
+            background: var(--danger);
+            color: white;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 1em;
+            margin-top: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .guardian-alert button:hover {
+            box-shadow: 0 0 20px var(--danger-glow);
+            transform: translateY(-2px);
+        }
+
+        /* Fake Call Overlay */
+        #fake-call-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            background: linear-gradient(160deg, #1a0030, #000);
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            animation: fadeIn 0.3s ease;
+        }
+
+        #fake-call-overlay.show {
+            display: flex;
+        }
+
+        .call-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            box-shadow: 0 0 0 0 rgba(190, 0, 255, 0.5);
+            animation: ring-pulse 1.5s infinite;
+        }
+
+        @keyframes ring-pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(190, 0, 255, 0.6);
+            }
+
+            70% {
+                box-shadow: 0 0 0 30px rgba(190, 0, 255, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(190, 0, 255, 0);
+            }
+        }
+
+        .call-buttons {
+            display: flex;
+            gap: 60px;
+            margin-top: 50px;
+        }
+
+        .call-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .call-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .call-btn.answer {
+            background: #38ef7d;
+            color: #000;
+        }
+
+        .call-btn.decline {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        /* Toast Notification */
+        .aurora-toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(20, 10, 30, 0.95);
+            border: 1px solid var(--primary);
+            border-radius: 16px;
+            padding: 16px 24px;
+            color: white;
+            z-index: 9998;
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            text-align: center;
+            min-width: 280px;
+            backdrop-filter: blur(20px);
+        }
+
+        .aurora-toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Panic Timer Card */
+        #panic-timer-card {
+            display: none;
+            background: rgba(255, 8, 68, 0.08);
+            border: 1px solid var(--danger);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            margin: 0 auto 30px;
+            max-width: 800px;
+        }
+
+        @keyframes pulse-border {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 8, 68, 0.6);
+            }
+
+            70% {
+                box-shadow: 0 0 0 15px rgba(255, 8, 68, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 8, 68, 0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <div style="font-size: 1.4em; font-weight: 800; color: var(--text-main); letter-spacing: 1px;">
+            <i class="fa-solid fa-shield-halved" style="color: var(--primary);"></i> Aurora
+        </div>
+        <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+            {% if user.is_authenticated %}
+            <a href="{% url 'home' %}"><i class="fa-solid fa-house"></i> Dashboard</a>
+            <a href="{% url 'safe_walk' %}"><i class="fa-solid fa-person-walking"></i> Safe Walk</a>
+            <a href="{% url 'safe_route' %}"><i class="fa-solid fa-map-location-dot"></i> Safe Route</a>
+            <a href="{% url 'trusted_contacts' %}"><i class="fa-solid fa-users"></i> Contacts</a>
+            <a href="{% url 'sos_history' %}"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
+            <a href="{% url 'incident_report' %}"><i class="fa-solid fa-flag"></i> Report</a>
+            <a href="{% url 'profile_settings' %}"><i class="fa-solid fa-gear"></i> Settings</a>
+            <form action="{% url 'logout' %}" method="post"
+                style="display: inline; margin: 0; padding: 0; background: none; border: none; box-shadow: none; width: auto; max-width: none;">
+                {% csrf_token %}
+                <button type="submit"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+            </form>
+            {% else %}
+            <a href="{% url 'login' %}">Login</a>
+            <a href="{% url 'register' %}">Register</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    {% block content %}
+    {% endblock %}
+
+    {% if user.is_authenticated %}
+    <!-- Community Guardian Alert -->
+    <div id="guardian-modal" class="guardian-alert">
+        <h3><i class="fa-solid fa-triangle-exclamation fa-beat-fade"></i> COMMUNITY ALERT</h3>
+        <p><strong><span id="guardian-name">Someone</span></strong> triggered an SOS nearby.</p>
+        <div class="alert-distance" id="guardian-distance">0.0 km Away</div>
+        <p style="font-size: 0.85em; color: var(--text-muted); text-align: center;">Authorities have been notified.
+            Please be vigilant.</p>
+        <button onclick="document.getElementById('guardian-modal').classList.remove('active')">Acknowledge</button>
+    </div>
+
+    <!-- Fake Call Overlay -->
+    <div id="fake-call-overlay">
+        <div class="call-avatar">👩</div>
+        <h2 id="fake-caller-name" style="color: white; font-size: 1.6em; margin: 0;">Mom</h2>
+        <p style="color: rgba(255,255,255,0.5); margin-top: 8px; font-size: 0.95em;">Incoming call...</p>
+        <div class="call-buttons">
+            <div style="text-align: center;">
+                <button class="call-btn decline" onclick="endFakeCall()"><i
+                        class="fa-solid fa-phone-slash"></i></button>
+                <p style="color: rgba(255,255,255,0.5); font-size: 0.8em; margin-top: 8px;">Decline</p>
+            </div>
+            <div style="text-align: center;">
+                <button class="call-btn answer" onclick="endFakeCall()"><i class="fa-solid fa-phone"></i></button>
+                <p style="color: rgba(255,255,255,0.5); font-size: 0.8em; margin-top: 8px;">Answer</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="aurora-toast" class="aurora-toast"></div>
+
+    <script>
+        const CSRF_TOKEN = '{{ csrf_token }}';
+
+        // ── Location ────────────────────────────────────────────────
+        function updateLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    fetch("{% url 'update_location' %}", {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': CSRF_TOKEN },
+                        body: `lat=${lat}&lon=${lon}`
+                    }).catch(() => { });
+                }, null, { enableHighAccuracy: true });
+            }
+        }
+
+        // ── Community Alerts ────────────────────────────────────────
+        function checkForAlerts() {
+            fetch("{% url 'check_alerts' %}")
+                .then(r => r.json())
+                .then(data => {
+                    if (data.alerts && data.alerts.length > 0) {
+                        const al = data.alerts[0];
+                        document.getElementById('guardian-name').innerText = al.username;
+                        document.getElementById('guardian-distance').innerText = al.distance + ' km Away';
+                        document.getElementById('guardian-modal').classList.add('active');
+                    } else {
+                        document.getElementById('guardian-modal').classList.remove('active');
+                    }
+                }).catch(() => { });
+        }
+
+        // ── Toast ───────────────────────────────────────────────────
+        function showToast(msg, duration = 4000) {
+            const el = document.getElementById('aurora-toast');
+            el.innerHTML = msg;
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), duration);
+        }
+
+        // ── Fake Call ───────────────────────────────────────────────
+        const callerNames = ['Mom', 'Dad', 'Priya', 'Ananya', 'Emergency Contact'];
+        let ringtoneCtx = null;
+        let ringtoneInterval = null;
+
+        function startFakeCall() {
+            const name = callerNames[Math.floor(Math.random() * callerNames.length)];
+            document.getElementById('fake-caller-name').innerText = name;
+            document.getElementById('fake-call-overlay').classList.add('show');
+            playRingtone();
+        }
+
+        function endFakeCall() {
+            document.getElementById('fake-call-overlay').classList.remove('show');
+            stopRingtone();
+        }
+
+        function playRingtone() {
+            try {
+                ringtoneCtx = new (window.AudioContext || window.webkitAudioContext)();
+                function beep() {
+                    if (!ringtoneCtx) return;
+                    const osc = ringtoneCtx.createOscillator();
+                    const gain = ringtoneCtx.createGain();
+                    osc.connect(gain); gain.connect(ringtoneCtx.destination);
+                    osc.frequency.value = 880; osc.type = 'sine';
+                    gain.gain.setValueAtTime(0.3, ringtoneCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ringtoneCtx.currentTime + 0.4);
+                    osc.start(ringtoneCtx.currentTime); osc.stop(ringtoneCtx.currentTime + 0.4);
+                }
+                beep();
+                ringtoneInterval = setInterval(beep, 1200);
+            } catch (e) { }
+        }
+
+        function stopRingtone() {
+            if (ringtoneInterval) clearInterval(ringtoneInterval);
+            if (ringtoneCtx) { ringtoneCtx.close(); ringtoneCtx = null; }
+        }
+
+        // ── Shake to SOS ────────────────────────────────────────────
+        let shakeCount = 0;
+        let lastShakeTime = 0;
+        let shakeSosCountdown = null;
+        let shakeArmed = false;
+
+        window.addEventListener('devicemotion', function (e) {
+            if (!shakeArmed) return;
+            const acc = e.accelerationIncludingGravity;
+            if (!acc) return;
+            const force = Math.sqrt(acc.x ** 2 + acc.y ** 2 + acc.z ** 2);
+            if (force > 25) {
+                const now = Date.now();
+                if (now - lastShakeTime < 600) shakeCount++;
+                else shakeCount = 1;
+                lastShakeTime = now;
+                if (shakeCount >= 3 && !shakeSosCountdown) {
+                    triggerShakeSOS();
+                }
+            }
+        }, false);
+
+        function armShake() {
+            shakeArmed = !shakeArmed;
+            const btn = document.getElementById('shake-arm-btn');
+            if (shakeArmed) {
+                btn.innerHTML = '<i class="fa-solid fa-hand-fist" style="color: var(--danger);"></i> Shake Guard: <strong style="color:var(--danger);">ARMED</strong> — tap to disarm';
+                btn.style.borderColor = 'var(--danger)';
+                showToast('<i class="fa-solid fa-hand-fist"></i> Shake Guard armed! Rapidly shake your device to trigger SOS.', 3000);
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-hand-fist"></i> Arm Shake-to-SOS';
+                btn.style.borderColor = 'var(--glass-border)';
+            }
+        }
+
+        function triggerShakeSOS() {
+            shakeArmed = false;
+            let secs = 5;
+            showToast(`<i class="fa-solid fa-hand-fist"></i><strong> SHAKE DETECTED!</strong><br>SOS fires in <span id="shake-cd">${secs}</span>s... <button onclick="cancelShakeSOS()" style="margin-top:8px; padding:4px 12px; background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:8px; color:white; cursor:pointer; font-size:0.85em;">Cancel</button>`, 6500);
+            shakeSosCountdown = setInterval(() => {
+                secs--;
+                const el = document.getElementById('shake-cd');
+                if (el) el.innerText = secs;
+                if (secs <= 0) {
+                    clearInterval(shakeSosCountdown); shakeSosCountdown = null;
+                    const form = document.getElementById('sos-form');
+                    if (form) {
+                        const ti = form.querySelector('[name="trigger"]');
+                        if (ti) ti.value = 'auto_shake';
+                        form.submit();
+                    }
+                }
+            }, 1000);
+        }
+
+        function cancelShakeSOS() {
+            if (shakeSosCountdown) { clearInterval(shakeSosCountdown); shakeSosCountdown = null; }
+            shakeCount = 0;
+            document.getElementById('aurora-toast').classList.remove('show');
+            showToast('<i class="fa-solid fa-check"></i> Shake SOS cancelled.', 2000);
+        }
+
+        // ── Panic Timer ──────────────────────────────────────────────
+        let panicInterval = null;
+        let panicEndTime = null;
+
+        function startPanicTimer(minutes) {
+            if (panicInterval) clearInterval(panicInterval);
+            panicEndTime = Date.now() + minutes * 60 * 1000;
+            document.getElementById('panic-timer-card').style.display = 'block';
+            document.getElementById('panic-timer-card').scrollIntoView({ behavior: 'smooth' });
+            updatePanicDisplay();
+            panicInterval = setInterval(() => {
+                const remaining = panicEndTime - Date.now();
+                if (remaining <= 0) {
+                    clearInterval(panicInterval); panicInterval = null;
+                    document.getElementById('panic-display').innerText = '00:00';
+                    const form = document.getElementById('sos-form');
+                    if (form) {
+                        const ti = form.querySelector('[name="trigger"]');
+                        if (ti) ti.value = 'auto_panic';
+                        form.submit();
+                    }
+                } else { updatePanicDisplay(); }
+            }, 1000);
+            showToast(`<i class="fa-solid fa-hourglass-start"></i> Panic timer set for <strong>${minutes} minutes</strong>. Tap "I'm Safe" to cancel.`, 3500);
+        }
+
+        function updatePanicDisplay() {
+            const r = Math.max(0, panicEndTime - Date.now());
+            const m = Math.floor(r / 60000), s = Math.floor((r % 60000) / 1000);
+            document.getElementById('panic-display').innerText =
+                (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+        }
+
+        function cancelPanic() {
+            if (panicInterval) { clearInterval(panicInterval); panicInterval = null; }
+            document.getElementById('panic-timer-card').style.display = 'none';
+            showToast('<i class="fa-solid fa-check"></i> Panic timer cancelled. Stay safe!', 2500);
+        }
+
+        // ── Battery SOS ──────────────────────────────────────────────
+        let batteryWarned5 = false;
+        let batteryWarned10 = false;
+
+        if ('getBattery' in navigator) {
+            navigator.getBattery().then(battery => {
+                function checkBattery() {
+                    const pct = battery.level * 100;
+                    if (!battery.charging) {
+                        if (pct <= 5 && !batteryWarned5) {
+                            batteryWarned5 = true;
+                            showToast(`<i class="fa-solid fa-battery-empty" style="color:var(--danger)"></i> <strong>CRITICAL: ${pct.toFixed(0)}% battery!</strong><br>Auto-SOS firing in 10 seconds...`, 11000);
+                            setTimeout(() => {
+                                const form = document.getElementById('sos-form');
+                                if (form) {
+                                    const ti = form.querySelector('[name="trigger"]');
+                                    if (ti) ti.value = 'auto_battery';
+                                    form.submit();
+                                }
+                            }, 10000);
+                        } else if (pct <= 10 && !batteryWarned10) {
+                            batteryWarned10 = true;
+                            showToast(`<i class="fa-solid fa-battery-quarter" style="color:#ffaa00"></i> Battery at <strong>${pct.toFixed(0)}%</strong>. Auto-SOS will fire at 5%. Please charge.`, 5000);
+                        }
+                    } else {
+                        batteryWarned5 = false; batteryWarned10 = false;
+                    }
+                }
+                checkBattery();
+                battery.addEventListener('levelchange', checkBattery);
+                battery.addEventListener('chargingchange', checkBattery);
+                setInterval(checkBattery, 60000);
+            });
+        }
+
+        // ── Init Loops ───────────────────────────────────────────────
+        updateLocation();
+        setInterval(updateLocation, 30000);
+        setInterval(checkForAlerts, 10000);
+    </script>
+    {% endif %}
+</body>
+
+</html>

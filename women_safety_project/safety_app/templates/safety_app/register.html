@@ -1,0 +1,27 @@
+{% extends 'safety_app/base.html' %}
+{% load static %}
+
+{% block content %}
+<div style="display: flex; justify-content: center; align-items: center; min-height: 80vh; margin: 40px 0;">
+    <form method="post" style="width: 100%; max-width: 500px;">
+        <h2 style="color: var(--secondary); text-align: center; margin-bottom: 30px;"><i
+                class="fa-solid fa-user-plus"></i> Join Aurora</h2>
+        <p style="text-align: center; color: var(--text-muted); margin-bottom: 25px;">Create an account to access the
+            safety network.</p>
+
+        {% csrf_token %}
+
+        <div style="margin-bottom: 20px;">
+            {{ form.as_p }}
+        </div>
+
+        <button type="submit" class="btn-primary"
+            style="background: linear-gradient(135deg, var(--secondary), var(--primary)); margin-top: 10px;">Register
+            Account</button>
+
+        <div class="help-text" style="margin-top: 25px;">
+            Already have an account? <a href="{% url 'login' %}">Login here</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

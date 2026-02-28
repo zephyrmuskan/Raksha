@@ -1,0 +1,164 @@
+{% extends 'safety_app/base.html' %}
+{% load static %}
+
+{% block content %}
+<div style="max-width: 700px; margin: 40px auto; padding: 0 20px;">
+
+    <h2 style="color: var(--secondary); margin-bottom: 8px;">
+        <i class="fa-solid fa-person-walking"></i> Safe Walk Mode
+    </h2>
+    <p style="color: var(--text-muted); margin-bottom: 30px;">
+        Tell the system where you're going and how long it should take. If you don't check in on time, an SOS alert
+        fires automatically.
+    </p>
+
+    {% if active_journey %}
+    <!-- Active Journey Card -->
+    <div class="dash-card" style="border: 1px solid var(--primary); text-align: center;">
+        <h3 style="color: var(--primary); justify-content: center;">
+            <i class="fa-solid fa-location-arrow fa-beat" style="color: var(--primary);"></i>
+            Journey In Progress
+        </h3>
+        <p style="color: var(--text-muted); margin-bottom: 5px;">Destination</p>
+        <p style="font-size: 1.3em; font-weight: 700; margin-bottom: 20px;">{{ active_journey.destination }}</p>
+
+        <div id="countdown-display" style="font-size: 3em; font-weight: 900; color: var(--primary); letter-spacing: 2px; margin: 20px 0;
+                   text-shadow: 0 0 20px rgba(190,0,255,0.5); font-variant-numeric: tabular-nums;">
+            --:--
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.9em; margin-bottom: 25px;">
+            <i class="fa-solid fa-triangle-exclamation" style="color: #ffaa00;"></i>
+            SOS will auto-fire when timer reaches zero.
+        </p>
+
+        <button id="arrived-btn" onclick="markArrived()" class="btn-primary"
+            style="background: linear-gradient(135deg, #11998e, #38ef7d); width: 100%; padding: 16px; font-size: 1.1em;">
+            <i class="fa-solid fa-flag-checkered"></i> I Arrived Safe!
+        </button>
+
+        <form id="sos-form" action="{% url 'sos' %}" method="post"
+            style="display:none; margin:0; box-shadow:none; border:none; background:none;">
+            {% csrf_token %}
+            <input type="hidden" name="lat" id="journey-lat">
+            <input type="hidden" name="lon" id="journey-lon">
+            <input type="hidden" name="trigger" value="auto_journey">
+        </form>
+    </div>
+
+    <script>
+        // Get remaining time via AJAX
+        const CSRF_TOKEN = '{{ csrf_token }}';
+
+        function padZero(n) { return n < 10 ? '0' + n : '' + n; }
+
+        function updateCountdown() {
+            fetch("{% url 'check_journey' %}")
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.active) return;
+                    if (data.expired) {
+                        document.getElementById('countdown-display').innerText = '00:00';
+                        document.getElementById('countdown-display').style.color = 'var(--danger)';
+                        // Get location then fire SOS
+                        if (navigator.geolocation) {
+                            navigator.geolocation.getCurrentPosition(pos => {
+                                document.getElementById('journey-lat').value = pos.coords.latitude;
+                                document.getElementById('journey-lon').value = pos.coords.longitude;
+                                document.getElementById('sos-form').submit();
+                            }, () => { document.getElementById('sos-form').submit(); });
+                        } else {
+                            document.getElementById('sos-form').submit();
+                        }
+                        return;
+                    }
+                    const r = data.remaining_seconds;
+                    const mins = Math.floor(r / 60);
+                    const secs = r % 60;
+                    document.getElementById('countdown-display').innerText = padZero(mins) + ':' + padZero(secs);
+                    // Color warning when under 60s
+                    if (r < 60) document.getElementById('countdown-display').style.color = 'var(--danger)';
+                    else if (r < 180) document.getElementById('countdown-display').style.color = '#ffaa00';
+                    else document.getElementById('countdown-display').style.color = 'var(--primary)';
+                });
+        }
+
+        function markArrived() {
+            fetch("{% url 'arrive_safe' %}", {
+                method: 'POST',
+                headers: { 'X-CSRFToken': CSRF_TOKEN }
+            }).then(r => r.json()).then(d => {
+                if (d.status === 'arrived') {
+                    document.getElementById('arrived-btn').innerHTML = '<i class="fa-solid fa-circle-check"></i> Marked Safe! Redirecting...';
+                    document.getElementById('arrived-btn').style.background = '#38ef7d';
+                    setTimeout(() => window.location.href = '/', 1500);
+                }
+            });
+        }
+
+        // Poll every 10 seconds
+        updateCountdown();
+        setInterval(updateCountdown, 10000);
+    </script>
+
+    {% else %}
+    <!-- Start New Journey Form -->
+    <form method="post">
+        {% csrf_token %}
+        <div style="margin-bottom: 20px;">
+            <label
+                style="display: block; color: var(--text-muted); font-size: 0.9em; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">
+                <i class="fa-solid fa-map-pin" style="color: var(--primary);"></i> Destination
+            </label>
+            <input type="text" name="destination" placeholder="e.g. Home, College, Friend's Place" required
+                style="width: 100%;">
+        </div>
+
+        <div style="margin-bottom: 30px;">
+            <label
+                style="display: block; color: var(--text-muted); font-size: 0.9em; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">
+                <i class="fa-solid fa-clock" style="color: var(--primary);"></i> Expected travel time
+            </label>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px;">
+                {% for mins in "15,30,45,60"|split:"," %}
+                <button type="button" class="btn-primary time-preset" onclick="setETA(this, {{ mins }})"
+                    style="padding: 12px; background: var(--glass-bg); border: 1px solid var(--glass-border); font-size: 0.9em;">
+                    {{ mins }} min
+                </button>
+                {% endfor %}
+            </div>
+            <input type="number" name="eta_minutes" id="eta_minutes" placeholder="Or type minutes..." min="1" max="480"
+                required style="width: 100%;">
+        </div>
+
+        <button type="submit" class="btn-primary" style="width: 100%; padding: 16px; font-size: 1.1em;">
+            <i class="fa-solid fa-play"></i> Start Safe Walk
+        </button>
+    </form>
+
+    <div class="dash-card" style="margin-top: 25px; padding: 20px;">
+        <h3 style="font-size: 0.95em; color: var(--text-muted); justify-content: flex-start; gap: 10px;">
+            <i class="fa-solid fa-circle-info" style="color: var(--primary);"></i> How Safe Walk Works
+        </h3>
+        <ul style="color: var(--text-muted); font-size: 0.85em; margin: 10px 0 0; padding-left: 18px; line-height: 2;">
+            <li>Set your destination and how long you expect to travel.</li>
+            <li>A countdown timer starts immediately.</li>
+            <li>Click <strong>I Arrived Safe!</strong> when you reach your destination.</li>
+            <li>If the timer hits zero without confirmation, an <strong>automatic SOS</strong> fires to all your trusted
+                contacts.</li>
+        </ul>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    function setETA(btn, mins) {
+        document.getElementById('eta_minutes').value = mins;
+        document.querySelectorAll('.time-preset').forEach(b => {
+            b.style.background = 'var(--glass-bg)';
+            b.style.borderColor = 'var(--glass-border)';
+        });
+        btn.style.background = 'rgba(190,0,255,0.2)';
+        btn.style.borderColor = 'var(--primary)';
+    }
+</script>
+{% endblock %}

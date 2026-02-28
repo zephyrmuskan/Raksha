@@ -1,0 +1,26 @@
+{% extends 'safety_app/base.html' %}
+{% load static %}
+
+{% block content %}
+<div style="display: flex; justify-content: center; align-items: center; min-height: 70vh;">
+    <div style="text-align: center; padding: 40px 20px;">
+        <i class="fa-solid fa-circle-check" style="font-size: 5em; color: #38ef7d; display: block; margin-bottom: 20px;
+            filter: drop-shadow(0 0 20px rgba(56,239,125,0.6)); animation: pulse 2s infinite;"></i>
+        <h2 style="color: var(--text-main); margin-bottom: 10px;">Report Submitted</h2>
+        <p style="color: var(--text-muted); margin-bottom: 30px; max-width: 400px;">
+            Thank you for keeping the community safe. Your incident has been recorded and will appear on the safety
+            heatmap.
+        </p>
+        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+            <a href="{% url 'safe_route' %}" class="btn-primary"
+                style="text-decoration: none; padding: 12px 24px; background: linear-gradient(135deg, #11998e, #38ef7d);">
+                <i class="fa-solid fa-map"></i> View Safety Map
+            </a>
+            <a href="{% url 'home' %}" class="btn-primary"
+                style="text-decoration: none; padding: 12px 24px; background: var(--glass-bg); border: 1px solid var(--glass-border);">
+                <i class="fa-solid fa-house"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

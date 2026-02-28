@@ -1,0 +1,119 @@
+{% extends 'safety_app/base.html' %}
+{% load static %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 40px auto; padding: 0 20px;">
+
+    <h2 style="color: var(--secondary); margin-bottom: 8px;">
+        <i class="fa-solid fa-clock-rotate-left"></i> SOS Event History
+    </h2>
+    <p style="color: var(--text-muted); margin-bottom: 30px;">
+        A complete log of all SOS events triggered from your account.
+    </p>
+
+    {% if logs %}
+    <div class="dash-card" style="padding: 0; overflow: hidden;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: rgba(255,255,255,0.05); border-bottom: 1px solid var(--glass-border);">
+                    <th
+                        style="padding: 14px 18px; text-align: left; color: var(--text-muted); font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px;">
+                        Date & Time</th>
+                    <th
+                        style="padding: 14px 18px; text-align: left; color: var(--text-muted); font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px;">
+                        Event</th>
+                    <th
+                        style="padding: 14px 18px; text-align: left; color: var(--text-muted); font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px;">
+                        Location</th>
+                    <th
+                        style="padding: 14px 18px; text-align: left; color: var(--text-muted); font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px;">
+                        Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+                    onmouseout="this.style.background='transparent'">
+
+                    <td style="padding: 14px 18px; color: var(--text-muted); font-size: 0.9em; white-space: nowrap;">
+                        {{ log.timestamp|date:"M d, Y" }}<br>
+                        <span style="font-size: 0.85em; opacity: 0.7;">{{ log.timestamp|date:"H:i:s" }}</span>
+                    </td>
+
+                    <td style="padding: 14px 18px;">
+                        {% if log.action == 'triggered' %}
+                        <span
+                            style="background: rgba(255,8,68,0.15); color: var(--danger); padding: 4px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600; border: 1px solid var(--danger);">
+                            <i class="fa-solid fa-tower-broadcast"></i> SOS Triggered
+                        </span>
+                        {% elif log.action == 'deactivated' %}
+                        <span
+                            style="background: rgba(56,239,125,0.12); color: #38ef7d; padding: 4px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600; border: 1px solid #38ef7d;">
+                            <i class="fa-solid fa-shield-check"></i> Deactivated (Safe)
+                        </span>
+                        {% elif log.action == 'duress' %}
+                        <span
+                            style="background: rgba(255, 170, 0, 0.12); color: #ffaa00; padding: 4px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600; border: 1px solid #ffaa00;">
+                            <i class="fa-solid fa-user-secret"></i> Duress PIN Used
+                        </span>
+                        {% elif log.action == 'auto_panic' %}
+                        <span
+                            style="background: rgba(255,8,68,0.12); color: #ff6699; padding: 4px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600; border: 1px solid #ff6699;">
+                            <i class="fa-solid fa-hourglass-end"></i> Panic Timer Expired
+                        </span>
+                        {% elif log.action == 'auto_battery' %}
+                        <span
+                            style="background: rgba(255,8,68,0.12); color: #ff6699; padding: 4px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600; border: 1px solid #ff6699;">
+                            <i class="fa-solid fa-battery-empty"></i> Battery Critical
+                        </span>
+                        {% elif log.action == 'auto_shake' %}
+                        <span
+                            style="background: rgba(255,8,68,0.12); color: #ff6699; padding: 4px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600; border: 1px solid #ff6699;">
+                            <i class="fa-solid fa-hand-fist"></i> Shake Detected
+                        </span>
+                        {% elif log.action == 'auto_journey' %}
+                        <span
+                            style="background: rgba(255,8,68,0.12); color: #ff6699; padding: 4px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600; border: 1px solid #ff6699;">
+                            <i class="fa-solid fa-map-location-dot"></i> Safe Walk Expired
+                        </span>
+                        {% else %}
+                        <span style="color: var(--text-muted);">{{ log.action }}</span>
+                        {% endif %}
+                    </td>
+
+                    <td style="padding: 14px 18px; font-size: 0.88em;">
+                        {% if log.latitude and log.longitude %}
+                        <a href="https://www.google.com/maps/search/?api=1&query={{ log.latitude }},{{ log.longitude }}"
+                            target="_blank" style="color: var(--primary); text-decoration: none;">
+                            <i class="fa-solid fa-location-dot"></i> View Map
+                        </a>
+                        {% else %}
+                        <span style="color: var(--text-muted);">—</span>
+                        {% endif %}
+                    </td>
+
+                    <td style="padding: 14px 18px; font-size: 0.85em; color: var(--text-muted);">
+                        {{ log.notes|default:"—" }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="dash-card" style="text-align: center; padding: 60px 20px;">
+        <i class="fa-solid fa-shield-check"
+            style="font-size: 3em; color: #38ef7d; margin-bottom: 20px; display: block;"></i>
+        <h3 style="color: var(--text-main);">No SOS Events Recorded</h3>
+        <p style="color: var(--text-muted);">You have never triggered an SOS alert. Stay safe!</p>
+    </div>
+    {% endif %}
+
+    <div style="text-align: center; margin-top: 30px;">
+        <a href="{% url 'home' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.9em;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends 'safety_app/base.html' %}
+{% load static %}
+
+{% block content %}
+<div style="display: flex; justify-content: center; align-items: flex-start; min-height: 80vh; margin: 40px 20px;">
+    <div style="width: 100%; max-width: 600px;">
+
+        <h2 style="color: var(--secondary); text-align: center; margin-bottom: 8px;">
+            <i class="fa-solid fa-user-shield"></i> Profile & Security Settings
+        </h2>
+        <p style="text-align: center; color: var(--text-muted); margin-bottom: 30px;">
+            Manage your secret PINs for SOS deactivation. Keep these private.
+        </p>
+
+        {% if success %}
+        <div style="background: rgba(56,239,125,0.12); border: 1px solid #38ef7d; border-radius: 12px; padding: 14px; text-align: center; margin-bottom: 20px;">
+            <p style="color: #38ef7d; font-weight: 600; margin: 0;"><i class="fa-solid fa-circle-check"></i> PINs updated successfully!</p>
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div style="background: rgba(255,8,68,0.1); border: 1px solid var(--danger); border-radius: 12px; padding: 14px; text-align: center; margin-bottom: 20px;">
+            <p style="color: var(--danger); font-weight: 600; margin: 0;"><i class="fa-solid fa-circle-xmark"></i> {{ error }}</p>
+        </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            <!-- Real PIN -->
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; color: var(--text-muted); font-size: 0.9em; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">
+                    <i class="fa-solid fa-shield-halved" style="color: #38ef7d;"></i> Real Deactivation PIN
+                </label>
+                <input type="password" name="real_pin" id="real_pin" value="{{ profile.real_pin }}"
+                    placeholder="Enter new Real PIN"
+                    style="letter-spacing: 4px; font-size: 1.2em; text-align: center;" required>
+                <p style="color: var(--text-muted); font-size: 0.82em; margin-top: 6px;">
+                    <i class="fa-solid fa-circle-info"></i> Enter this to <strong>truly deactivate</strong> an SOS alert.
+                </p>
+            </div>
+
+            <!-- Duress PIN -->
+            <div style="margin-bottom: 30px;">
+                <label style="display: block; color: var(--text-muted); font-size: 0.9em; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">
+                    <i class="fa-solid fa-user-secret" style="color: var(--danger);"></i> Duress / Coercion PIN
+                </label>
+                <input type="password" name="duress_pin" id="duress_pin" value="{{ profile.duress_pin }}"
+                    placeholder="Enter Duress PIN"
+                    style="letter-spacing: 4px; font-size: 1.2em; text-align: center;" required>
+                <p style="color: var(--text-muted); font-size: 0.82em; margin-top: 6px;">
+                    <i class="fa-solid fa-triangle-exclamation" style="color: var(--danger);"></i>
+                    Enter this when <strong>forced to deactivate</strong> — appears to deactivate but secretly alerts your contacts.
+                </p>
+            </div>
+
+            <!-- Toggle visibility -->
+            <div style="text-align: center; margin-bottom: 25px;">
+                <label style="cursor: pointer; color: var(--text-muted); font-size: 0.9em; user-select: none;">
+                    <input type="checkbox" onchange="togglePinVisibility(this)" style="width: auto; margin-right: 8px; display: inline;">
+                    Show PINs
+                </label>
+            </div>
+
+            <button type="submit" class="btn-primary" style="width: 100%;">
+                <i class="fa-solid fa-floppy-disk"></i> Save Security Settings
+            </button>
+        </form>
+
+        <!-- Info Card -->
+        <div class="dash-card" style="margin-top: 30px; padding: 20px;">
+            <h3 style="font-size: 1em; justify-content: flex-start; gap: 10px; color: var(--text-muted);">
+                <i class="fa-solid fa-lightbulb" style="color: gold;"></i> How the Dual-PIN System Works
+            </h3>
+            <ul style="color: var(--text-muted); font-size: 0.88em; margin: 10px 0 0; padding-left: 20px; line-height: 1.9;">
+                <li>Use your <strong style="color: #38ef7d;">Real PIN</strong> when you are genuinely safe and want to turn off the alarm.</li>
+                <li>If someone <strong>forces</strong> you to deactivate, enter your <strong style="color: var(--danger);">Duress PIN</strong>.</li>
+                <li>The Duress PIN <em>appears</em> to deactivate everything — but silently escalates the alert to your contacts.</li>
+                <li>Keep both PINs memorized. Do <em>not</em> write them down in an obvious place.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+function togglePinVisibility(checkbox) {
+    const type = checkbox.checked ? 'text' : 'password';
+    document.getElementById('real_pin').type = type;
+    document.getElementById('duress_pin').type = type;
+}
+</script>
+{% endblock %}

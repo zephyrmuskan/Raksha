@@ -1,0 +1,316 @@
+{% extends 'safety_app/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="dashboard-grid">
+    <!-- Status Card -->
+    <div class="dash-card">
+        <h3><i class="fa-solid fa-satellite-dish" style="color: var(--success);"></i> System Status</h3>
+        <p style="color: var(--text-muted); margin-bottom: 15px;">Your connection to the Aurora safety network is
+            active.</p>
+        <div
+            style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid var(--glass-border); padding-bottom:10px;">
+            <span>Location Tracking</span>
+            <span style="color:var(--success); font-weight:bold;"><i class="fa-solid fa-circle-check"></i> Active</span>
+        </div>
+        <div
+            style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid var(--glass-border); padding-bottom:10px;">
+            <span>Guardian Mode</span>
+            <span style="color:var(--success); font-weight:bold;"><i class="fa-solid fa-circle-check"></i> Online</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+            <span>Voice Analysis</span>
+            <span style="color:var(--primary); font-weight:bold;"><i class="fa-solid fa-microphone"></i> Standby</span>
+        </div>
+    </div>
+
+    <!-- Profile Card -->
+    <div class="dash-card">
+        <h3><i class="fa-regular fa-id-badge" style="color: var(--secondary);"></i> Profile</h3>
+        <p style="color: var(--text-muted); margin-bottom: 20px;">Welcome back, <strong>{{ user.username }}</strong></p>
+
+        <a href="{% url 'trusted_contacts' %}" class="btn-primary"
+            style="display:block; text-align:center; text-decoration:none; padding:12px; margin-bottom:10px;">
+            <i class="fa-solid fa-address-book"></i> Manage Contacts
+        </a>
+        <a href="{% url 'safe_walk' %}" class="btn-primary"
+            style="display:block; text-align:center; text-decoration:none; padding:12px; margin-bottom:10px; background:linear-gradient(135deg, #1a1a2e, #be00ff);">
+            <i class="fa-solid fa-person-walking"></i> Start Safe Walk
+        </a>
+        <a href="{% url 'safe_route' %}" class="btn-primary"
+            style="display:block; text-align:center; text-decoration:none; padding:12px; background:linear-gradient(135deg, #11998e, #38ef7d);">
+            <i class="fa-solid fa-map"></i> View Safe Route
+        </a>
+    </div>
+
+    <!-- Live Tracking Map -->
+    <div class="dash-card" style="grid-column: 1 / -1;">
+        <h3><i class="fa-solid fa-location-crosshairs" style="color: var(--primary);"></i> Live Real-Time Tracking</h3>
+        <p style="color: var(--text-muted); margin-bottom: 15px;">Your location is tracked securely via the Aurora
+            network.</p>
+        <div
+            style="width:100%; height:300px; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.1);">
+            <iframe id="gmap-tracking" width="100%" height="100%" frameborder="0" style="border:0"
+                src="https://maps.google.com/maps?q=0,0&z=15&output=embed" allowfullscreen></iframe>
+        </div>
+        <script>
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(function (p) {
+                    const lat = p.coords.latitude, lon = p.coords.longitude;
+                    const sosLat = document.getElementById('lat');
+                    const sosLon = document.getElementById('lon');
+                    if (sosLat) sosLat.value = lat;
+                    if (sosLon) sosLon.value = lon;
+                    const iframe = document.getElementById('gmap-tracking');
+                    if (iframe && !iframe.src.includes(`${lat},${lon}`))
+                        iframe.src = `https://maps.google.com/maps?q=${lat},${lon}&z=16&output=embed`;
+                    const formData = new FormData();
+                    formData.append('lat', lat); formData.append('lon', lon);
+                    fetch("{% url 'update_location' %}", {
+                        method: 'POST', headers: { 'X-CSRFToken': '{{ csrf_token }}' }, body: formData
+                    }).catch(() => { });
+                }, () => { }, { enableHighAccuracy: true, maximumAge: 10000 });
+            }
+        </script>
+    </div>
+</div>
+
+{% if error %}
+<div
+    style="background:rgba(255,8,68,0.1); border:1px solid var(--danger); border-radius:12px; padding:15px; text-align:center; width:90%; max-width:500px; margin:0 auto 20px;">
+    <p style="color:var(--danger); font-weight:bold; margin:0;"><i class="fa-solid fa-circle-xmark"></i> {{ error }}</p>
+</div>
+{% endif %}
+
+{% if active_journey and not sos_active %}
+<!-- Active Safe Walk Banner -->
+<div style="max-width:800px; margin:0 auto 30px; padding:0 20px;">
+    <div
+        style="background:rgba(190,0,255,0.08); border:1px solid var(--primary); border-radius:16px; padding:16px 24px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+        <div>
+            <span style="color:var(--primary); font-weight:700;"><i class="fa-solid fa-person-walking fa-beat"
+                    style="color:var(--primary);"></i> Safe Walk Active</span>
+            <span style="color:var(--text-muted); font-size:0.9em; margin-left:12px;">→ <strong>{{
+                    active_journey.destination }}</strong></span>
+        </div>
+        <a href="{% url 'safe_walk' %}"
+            style="color:var(--primary); text-decoration:none; font-size:0.9em; font-weight:600;">View Countdown <i
+                class="fa-solid fa-arrow-right"></i></a>
+    </div>
+</div>
+{% endif %}
+
+{% if sos_active %}
+<!-- SOS Active State -->
+<div
+    style="text-align:center; margin:40px auto; background:var(--glass-bg); border:1px solid var(--danger); border-radius:24px; padding:40px; width:90%; max-width:600px; box-shadow:0 0 40px rgba(255,8,68,0.2);">
+    <h2 style="color:var(--danger); text-shadow:0 0 20px var(--danger-glow); animation:pulse 2s infinite;">
+        <i class="fa-solid fa-tower-broadcast fa-beat"></i> EMERGENCY ACTIVE
+    </h2>
+    <p style="font-size:1.1em; margin-bottom:30px;">Alerts have been dispatched to your trusted contacts and local
+        guardians.</p>
+    <form action="{% url 'deactivate_sos' %}" method="post"
+        style="box-shadow:none; background:rgba(0,0,0,0.2); border:1px dashed var(--danger); margin:0 auto; width:100%; max-width:400px; padding:30px;">
+        {% csrf_token %}
+        <label for="pin" style="text-align:center; color:white;">Enter PIN to Deactivate:</label>
+        <input type="password" id="pin" name="pin" placeholder="****" required
+            style="text-align:center; font-size:1.5em; letter-spacing:5px;">
+        <button type="submit"
+            style="background:linear-gradient(135deg,#11998e,#38ef7d); box-shadow:0 10px 20px rgba(56,239,125,0.3);">
+            <i class="fa-solid fa-shield-cat"></i> Secure Deactivate
+        </button>
+    </form>
+    <p style="font-size:0.8em; color:var(--text-muted); margin-top:20px;">Real PIN deactivates. Duress PIN sends silent
+        covert alert.</p>
+</div>
+
+{% else %}
+<!-- SOS Button -->
+<form id="sos-form" action="{% url 'sos' %}" method="post">
+    {% csrf_token %}
+    <input type="hidden" name="lat" id="lat">
+    <input type="hidden" name="lon" id="lon">
+    <input type="hidden" name="trigger" id="sos-trigger" value="triggered">
+    <button type="submit" id="sos-button">SOS</button>
+    <p style="color:var(--text-muted); margin-top:30px; font-size:1.1em;">Press in case of emergency.</p>
+</form>
+
+<script>
+    document.getElementById('sos-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const btn = document.getElementById('sos-button');
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        btn.style.boxShadow = '0 0 100px rgba(255,8,68,0.8)';
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(pos => {
+                document.getElementById('lat').value = pos.coords.latitude;
+                document.getElementById('lon').value = pos.coords.longitude;
+                e.target.submit();
+            }, () => { e.target.submit(); }, { enableHighAccuracy: true });
+        } else { e.target.submit(); }
+    });
+</script>
+
+<!-- ─── Panic Timer Card ─────────────────────────────────────── -->
+<div id="panic-timer-card">
+    <h3 style="color:var(--danger); margin-bottom:10px; justify-content:center;">
+        <i class="fa-solid fa-hourglass-half fa-spin"></i> Panic Timer Active
+    </h3>
+    <div id="panic-display"
+        style="font-size:3em; font-weight:900; color:var(--danger); letter-spacing:3px; margin:10px 0; font-variant-numeric: tabular-nums;">
+        --:--
+    </div>
+    <p style="color:var(--text-muted); font-size:0.9em; margin-bottom:15px;">SOS will fire automatically when this
+        reaches 00:00</p>
+    <button onclick="cancelPanic()" class="btn-primary"
+        style="background:linear-gradient(135deg,#11998e,#38ef7d); padding:10px 30px; width:auto;">
+        <i class="fa-solid fa-check"></i> I'm Safe — Cancel Timer
+    </button>
+</div>
+
+<!-- ─── Feature Cards Grid ──────────────────────────────────── -->
+<div class="dashboard-grid"
+    style="margin-top: 0; padding: 0 20px; max-width: 900px; margin-left: auto; margin-right: auto;">
+
+    <!-- Shake to SOS -->
+    <div class="dash-card" style="text-align:center;">
+        <h3 style="justify-content:center;"><i class="fa-solid fa-hand-fist" style="color:var(--danger);"></i>
+            Shake-to-SOS</h3>
+        <p style="color:var(--text-muted); font-size:0.9em; margin-bottom:20px;">Arm this guard and rapidly shake your
+            phone to trigger an instant SOS — no need to even unlock your screen.</p>
+        <button id="shake-arm-btn" onclick="armShake()" class="btn-primary"
+            style="width:100%; background:var(--glass-bg); border:1px solid var(--glass-border);">
+            <i class="fa-solid fa-hand-fist"></i> Arm Shake-to-SOS
+        </button>
+    </div>
+
+    <!-- Fake Incoming Call -->
+    <div class="dash-card" style="text-align:center;">
+        <h3 style="justify-content:center;"><i class="fa-solid fa-phone-volume" style="color:#38ef7d;"></i> Fake Call
+        </h3>
+        <p style="color:var(--text-muted); font-size:0.9em; margin-bottom:20px;">Simulate a realistic incoming phone
+            call to escape a threatening situation without raising suspicion.</p>
+        <button onclick="startFakeCall()" class="btn-primary"
+            style="width:100%; background:linear-gradient(135deg,#11998e,#38ef7d);">
+            <i class="fa-solid fa-phone"></i> Trigger Fake Call
+        </button>
+    </div>
+
+    <!-- Panic Timer -->
+    <div class="dash-card" style="text-align:center;">
+        <h3 style="justify-content:center;"><i class="fa-solid fa-hourglass-start" style="color:#ffaa00;"></i> Panic
+            Timer</h3>
+        <p style="color:var(--text-muted); font-size:0.9em; margin-bottom:15px;">Set a countdown. If you don't cancel it
+            in time, SOS fires automatically.</p>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px;">
+            <button onclick="startPanicTimer(15)" class="btn-primary"
+                style="padding:10px 0; background:var(--glass-bg); border:1px solid #ffaa00; font-size:0.9em;">15
+                min</button>
+            <button onclick="startPanicTimer(30)" class="btn-primary"
+                style="padding:10px 0; background:var(--glass-bg); border:1px solid #ffaa00; font-size:0.9em;">30
+                min</button>
+            <button onclick="startPanicTimer(60)" class="btn-primary"
+                style="padding:10px 0; background:var(--glass-bg); border:1px solid #ffaa00; font-size:0.9em;">1
+                hour</button>
+        </div>
+    </div>
+
+    <!-- Voice Guardian -->
+    <div class="dash-card" style="grid-column: 1 / -1; text-align:center;">
+        <h3 style="justify-content:center;"><i class="fa-solid fa-ear-listen" style="color:var(--primary);"></i> AI
+            Voice Analysis (24/7 Guardian Mode)</h3>
+        <p style="font-size:0.95em; color:var(--text-muted); margin-bottom:20px;">Monitors background audio for
+            screaming or aggressive tones. Auto-triggers SOS if you cannot reach your phone.</p>
+        <div id="audio-visualizer"
+            style="display:none; justify-content:center; gap:5px; height:40px; align-items:center; margin-bottom:20px;">
+            <div class="bar" style="width:8px; background:var(--primary); border-radius:4px;"></div>
+            <div class="bar" style="width:8px; background:var(--secondary); border-radius:4px;"></div>
+            <div class="bar" style="width:8px; background:var(--primary); border-radius:4px;"></div>
+            <div class="bar" style="width:8px; background:var(--secondary); border-radius:4px;"></div>
+            <div class="bar" style="width:8px; background:var(--primary); border-radius:4px;"></div>
+        </div>
+        <style>
+            @keyframes sound {
+                0% {
+                    height: 5px;
+                    opacity: .5
+                }
+
+                100% {
+                    height: 35px;
+                    opacity: 1
+                }
+            }
+
+            .bar:nth-child(1) {
+                animation: sound 474ms -800ms linear infinite alternate;
+            }
+
+            .bar:nth-child(2) {
+                animation: sound 433ms -400ms linear infinite alternate;
+            }
+
+            .bar:nth-child(3) {
+                animation: sound 407ms -200ms linear infinite alternate;
+            }
+
+            .bar:nth-child(4) {
+                animation: sound 458ms -600ms linear infinite alternate;
+            }
+
+            .bar:nth-child(5) {
+                animation: sound 400ms -100ms linear infinite alternate;
+            }
+        </style>
+        <button id="voice-btn" type="button" class="btn-primary" onclick="toggleVoiceAnalysis()"
+            style="width:auto; padding:15px 40px; margin:0 auto;">
+            <i class="fa-solid fa-microphone-lines"></i> Activate Background Guardian
+        </button>
+        <p id="voice-status" style="margin-top:20px; font-weight:500; transition:all 0.3s;"></p>
+    </div>
+</div>
+
+<script>
+    // Voice Analysis Guardian
+    let isGuardianActive = false;
+    let guardianInterval;
+
+    function toggleVoiceAnalysis() {
+        const btn = document.getElementById('voice-btn');
+        const status = document.getElementById('voice-status');
+        const visualizer = document.getElementById('audio-visualizer');
+        if (isGuardianActive) {
+            isGuardianActive = false; clearInterval(guardianInterval);
+            btn.innerHTML = '<i class="fa-solid fa-microphone-lines"></i> Activate Background Guardian';
+            btn.style.background = ''; btn.style.border = '';
+            status.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Guardian Offline';
+            status.style.color = 'var(--text-muted)'; status.style.background = 'transparent';
+            visualizer.style.display = 'none';
+        } else {
+            isGuardianActive = true;
+            btn.innerHTML = '<i class="fa-solid fa-microphone-slash"></i> Disable Guardian';
+            btn.style.background = 'rgba(255,255,255,0.1)';
+            btn.style.border = '1px solid var(--primary)';
+            status.innerHTML = '<i class="fa-solid fa-circle-dot fa-fade" style="color:red;"></i> Monitoring audio 24/7...';
+            status.style.color = 'var(--text-main)';
+            visualizer.style.display = 'flex';
+            guardianInterval = setInterval(() => {
+                if (!isGuardianActive) return;
+                fetch("{% url 'analyze_voice' %}", {
+                    method: 'POST', headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+                }).then(r => r.json()).then(data => {
+                    if (data.danger_detected) {
+                        clearInterval(guardianInterval); isGuardianActive = false;
+                        status.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <strong>DANGER DETECTED</strong> (${(data.confidence * 100).toFixed(1)}%). Triggering SOS...`;
+                        status.style.color = 'white'; status.style.background = 'var(--danger)';
+                        status.style.padding = '10px'; status.style.borderRadius = '8px';
+                        visualizer.style.display = 'none';
+                        setTimeout(() => { document.getElementById('sos-form').submit(); }, 2000);
+                    }
+                }).catch(() => { });
+            }, 5000);
+        }
+    }
+</script>
+{% endif %}
+{% endblock %}

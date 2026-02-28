@@ -1,0 +1,196 @@
+{% extends 'safety_app/base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Include Leaflet CSS & JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+
+<div style="max-width: 860px; margin: 30px auto; padding: 0 20px;">
+    <h2 style="color: var(--secondary); margin-bottom: 6px;">
+        <i class="fa-solid fa-map-location-dot"></i> Safe Route Navigation
+    </h2>
+    <p style="color: var(--text-muted); margin-bottom: 20px;">Avoid unlit streets and community-reported danger zones.
+    </p>
+
+    <!-- Legend -->
+    <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:16px; font-size:0.85em;">
+        <span><span
+                style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#ffdd57;margin-right:6px;"></span>Low
+            risk</span>
+        <span><span
+                style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#ff8c00;margin-right:6px;"></span>Medium
+            risk</span>
+        <span><span
+                style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#ff0844;margin-right:6px;"></span>High
+            risk</span>
+        <span><span
+                style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#11998e;margin-right:6px;border:2px solid #38ef7d;"></span>Safe
+            route</span>
+    </div>
+
+    <div
+        style="background:rgba(255,255,255,0.05); padding:20px; border-radius:20px; border:1px solid rgba(255,255,255,0.1);">
+        <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+            <input type="text" id="start-location" placeholder="Locating you..." disabled
+                style="margin-bottom:0; flex:1;">
+            <input type="text" id="destination" placeholder="Enter Destination (e.g. Park Street)"
+                style="margin-bottom:0; flex:2;">
+            <button type="button" onclick="calculateSafeRoute()"
+                style="width:auto; margin-top:0; padding:10px 20px; font-size:1em;">Navigate</button>
+        </div>
+
+        <div id="map-container"
+            style="height:500px; background:#222; border-radius:10px; position:relative; overflow:hidden; border:2px solid rgba(255,255,255,0.1); z-index:1;">
+            <div id="map" style="width:100%; height:100%;"></div>
+
+            <div id="routing-overlay"
+                style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center; flex-direction:column;">
+                <div
+                    style="border:5px solid #f3f3f3; border-top:5px solid #ff007f; border-radius:50%; width:50px; height:50px; animation:spin 1s linear infinite;">
+                </div>
+                <p style="color:white; margin-top:15px;">Analyzing danger zones & generating Safe Route...</p>
+            </div>
+
+            <div id="route-success"
+                style="display:none; position:absolute; top:20px; left:20px; background:rgba(0,0,0,0.8); padding:15px; border-radius:10px; border-left:4px solid #38ef7d; z-index:1000;">
+                <h4 style="margin:0; color:#38ef7d;">✓ Safe Route Found</h4>
+                <p style="margin:5px 0 0; font-size:0.9em; color:#ddd;"></p>
+            </div>
+
+            <div id="incident-badge"
+                style="display:none; position:absolute; top:20px; right:20px; background:rgba(255,8,68,0.85); padding:8px 14px; border-radius:10px; z-index:1000; font-size:0.85em; font-weight:700; color:white; backdrop-filter:blur(8px);">
+                <i class="fa-solid fa-triangle-exclamation"></i> <span id="incident-count">0</span> incidents reported
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top:14px; text-align:right;">
+        <a href="{% url 'incident_report' %}" style="color:var(--text-muted); font-size:0.88em; text-decoration:none;">
+            <i class="fa-solid fa-flag"></i> Report a new unsafe area
+        </a>
+    </div>
+</div>
+
+<style>
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg)
+        }
+
+        100% {
+            transform: rotate(360deg)
+        }
+    }
+
+    .leaflet-top,
+    .leaflet-bottom {
+        z-index: 500;
+    }
+</style>
+
+<script>
+    var map = L.map('map').setView([22.5726, 88.3639], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19, attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    var userLat = 22.5726, userLon = 88.3639;
+    var dangerZone = null;
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function (pos) {
+            userLat = pos.coords.latitude; userLon = pos.coords.longitude;
+            map.setView([userLat, userLon], 14);
+            L.marker([userLat, userLon]).addTo(map).bindPopup("You are here");
+            document.getElementById('start-location').value = "Your Location";
+        });
+    }
+
+    // ── Incident Heatmap ──────────────────────────────────────────
+    var SEV_COLORS = { low: '#ffdd57', medium: '#ff8c00', high: '#ff0844' };
+    var SEV_RADIUS = { low: 150, medium: 250, high: 350 };
+
+    fetch("{% url 'get_incidents' %}")
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            var incidents = data.incidents || [];
+            if (incidents.length > 0) {
+                document.getElementById('incident-badge').style.display = 'block';
+                document.getElementById('incident-count').innerText = incidents.length;
+            }
+            incidents.forEach(function (inc) {
+                var color = SEV_COLORS[inc.severity] || '#ffaa00';
+                var radius = SEV_RADIUS[inc.severity] || 200;
+                L.circle([inc.lat, inc.lon], {
+                    color: color, fillColor: color, fillOpacity: 0.25, radius: radius, weight: 2
+                }).addTo(map).bindPopup('<strong style="color:' + color + '">⚠ ' + inc.severity.toUpperCase() + ' RISK</strong><br>' + inc.description);
+                L.circleMarker([inc.lat, inc.lon], {
+                    radius: 6, color: color, fillColor: color, fillOpacity: 0.9, weight: 2
+                }).addTo(map);
+            });
+        }).catch(function () { });
+
+    // ── Safe Route Logic ──────────────────────────────────────────
+    async function calculateSafeRoute() {
+        var destInput = document.getElementById('destination').value;
+        if (!destInput) return alert("Please enter a destination");
+        document.getElementById('routing-overlay').style.display = 'flex';
+        document.getElementById('route-success').style.display = 'none';
+
+        try {
+            var response = await fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(destInput));
+            var data = await response.json();
+
+            if (data && data.length > 0) {
+                var destLat = parseFloat(data[0].lat);
+                var destLon = parseFloat(data[0].lon);
+
+                if (window.routingControl) map.removeControl(window.routingControl);
+                if (dangerZone) map.removeLayer(dangerZone);
+
+                var midLat = (userLat + destLat) / 2, midLon = (userLon + destLon) / 2;
+                dangerZone = L.circle([midLat, midLon], {
+                    color: 'red', fillColor: '#f03', fillOpacity: 0.3, radius: 300
+                }).addTo(map).bindPopup("High Risk Area (Avoided by Safe Route)");
+
+                var dLat = destLat - userLat, dLon = destLon - userLon;
+                var avoidLat = midLat - (dLon * 0.3), avoidLon = midLon + (dLat * 0.3);
+
+                window.routingControl = L.Routing.control({
+                    waypoints: [L.latLng(userLat, userLon), L.latLng(avoidLat, avoidLon), L.latLng(destLat, destLon)],
+                    router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1', profile: 'foot' }),
+                    routeWhileDragging: false, show: false, addWaypoints: false, fitSelectedRoutes: true,
+                    lineOptions: { styles: [{ color: '#11998e', opacity: 0.9, weight: 6 }] },
+                    createMarker: function (i, wp, nWps) {
+                        if (i === 0) return L.marker(wp.latLng).bindPopup("Start");
+                        if (i === nWps - 1) return L.marker(wp.latLng).bindPopup("Destination");
+                        return null;
+                    }
+                }).addTo(map);
+
+                window.routingControl.on('routesfound', function (e) {
+                    document.getElementById('routing-overlay').style.display = 'none';
+                    var dist = (e.routes[0].summary.totalDistance / 1000).toFixed(1);
+                    var time = Math.round(e.routes[0].summary.totalTime / 60);
+                    document.getElementById('route-success').querySelector('p').innerText = dist + 'km · ~' + time + ' min walk. Avoids reported danger zones.';
+                    document.getElementById('route-success').style.display = 'block';
+                });
+                window.routingControl.on('routingerror', function () {
+                    document.getElementById('routing-overlay').style.display = 'none';
+                    alert("Could not map a route to that location.");
+                });
+            } else {
+                document.getElementById('routing-overlay').style.display = 'none';
+                alert("Location not found. Try a different address.");
+            }
+        } catch (err) {
+            console.error(err);
+            document.getElementById('routing-overlay').style.display = 'none';
+            alert("Error connecting to routing service.");
+        }
+    }
+</script>
+{% endblock %}

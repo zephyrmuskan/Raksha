@@ -1,0 +1,40 @@
+{% extends 'safety_app/base.html' %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 40px auto; padding: 0 20px;">
+    <h2><i class="fa-solid fa-users" style="color: var(--primary);"></i> Trusted Contacts</h2>
+    <p style="text-align: center; color: var(--text-muted); margin-bottom: 30px;">These contacts will be notified
+        immediately when you trigger an SOS.</p>
+
+    <div style="text-align: center; margin-bottom: 40px;">
+        <a href="{% url 'add_trusted_contact' %}" class="action-link"><i class="fa-solid fa-user-plus"></i> Add New
+            Contact</a>
+    </div>
+
+    {% if contacts %}
+    <ul style="padding: 0; margin: 0 auto;">
+        {% for contact in contacts %}
+        <li>
+            <div class="contact-info">
+                <strong><i class="fa-solid fa-user"></i> {{ contact.name }}</strong>
+                <span><i class="fa-solid fa-envelope" style="margin-right: 5px;"></i> {{ contact.email }}</span>
+                <span><i class="fa-solid fa-phone" style="margin-right: 5px;"></i> {{ contact.phone_number }}</span>
+            </div>
+            <form action="{% url 'delete_trusted_contact' contact.id %}" method="post"
+                style="margin: 0; padding: 0; background: none; border: none; box-shadow: none; width: auto;">
+                {% csrf_token %}
+                <button type="submit" title="Remove Contact"><i class="fa-solid fa-trash-can"></i> Remove</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <div class="dash-card" style="text-align: center; border: 1px dashed var(--glass-border);">
+        <i class="fa-solid fa-users-slash" style="font-size: 3em; color: var(--text-muted); margin-bottom: 15px;"></i>
+        <p style="color: var(--text-muted);">You haven't added any trusted contacts yet.</p>
+        <p style="color: var(--danger); font-size: 0.9em; margin-top: 10px;">We strongly recommend adding at least two
+            contacts for your safety.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

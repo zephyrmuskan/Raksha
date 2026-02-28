@@ -1,0 +1,47 @@
+{% extends 'safety_app/base.html' %}
+
+{% block content %}
+<div style="display: flex; justify-content: center; align-items: center; min-height: 70vh; margin: 40px 0;">
+    <form method="post">
+        <h2 style="color: var(--success); margin-bottom: 10px;"><i class="fa-solid fa-user-plus"></i> Add Contact</h2>
+        <p style="text-align: center; color: var(--text-muted); margin-bottom: 30px; font-size: 0.9em;">Add a family
+            member or friend to your emergency network.</p>
+
+        {% csrf_token %}
+
+        <label for="name">Full Name</label>
+        <div style="position: relative;">
+            <i class="fa-solid fa-user"
+                style="position: absolute; left: 15px; top: 18px; color: var(--text-muted);"></i>
+            <input type="text" id="name" name="name" placeholder="E.g. Jane Doe" required style="padding-left: 45px;">
+        </div>
+
+        <label for="email">Email Address</label>
+        <div style="position: relative;">
+            <i class="fa-solid fa-envelope"
+                style="position: absolute; left: 15px; top: 18px; color: var(--text-muted);"></i>
+            <input type="email" id="email" name="email" placeholder="jane@example.com" required
+                style="padding-left: 45px;">
+        </div>
+
+        <label for="phone_number">Phone Number</label>
+        <div style="position: relative;">
+            <i class="fa-solid fa-phone"
+                style="position: absolute; left: 15px; top: 18px; color: var(--text-muted);"></i>
+            <input type="text" id="phone_number" name="phone_number" placeholder="+1 234 567 8900" required
+                style="padding-left: 45px;">
+        </div>
+
+        <button type="submit" class="btn-primary"
+            style="background: linear-gradient(135deg, var(--success), #11998e); box-shadow: 0 10px 20px var(--success-glow); margin-top: 15px;">
+            <i class="fa-solid fa-plus"></i> Save Contact
+        </button>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="{% url 'trusted_contacts' %}"
+                style="color: var(--text-muted); text-decoration: none; font-size: 0.9em;"><i
+                    class="fa-solid fa-arrow-left"></i> Back to list</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

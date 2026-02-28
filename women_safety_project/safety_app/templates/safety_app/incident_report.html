@@ -1,0 +1,115 @@
+{% extends 'safety_app/base.html' %}
+{% load static %}
+
+{% block content %}
+<div style="max-width: 680px; margin: 40px auto; padding: 0 20px;">
+
+    <h2 style="color: var(--secondary); margin-bottom: 8px;">
+        <i class="fa-solid fa-triangle-exclamation" style="color: #ffaa00;"></i> Report Unsafe Area
+    </h2>
+    <p style="color: var(--text-muted); margin-bottom: 30px;">
+        Help keep the community safe by reporting dangerous locations. Your report will appear as a warning on the
+        safety heatmap.
+    </p>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <!-- Location -->
+        <div style="margin-bottom: 20px;">
+            <label
+                style="display: block; color: var(--text-muted); font-size: 0.9em; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">
+                <i class="fa-solid fa-location-dot" style="color: var(--danger);"></i> Incident Location
+            </label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <input type="number" name="latitude" id="inc_lat" placeholder="Latitude" step="0.000001" required>
+                <input type="number" name="longitude" id="inc_lon" placeholder="Longitude" step="0.000001" required>
+            </div>
+            <button type="button" onclick="useCurrentLocation()" class="btn-primary"
+                style="width: 100%; margin-top: 10px; padding: 10px; background: var(--glass-bg); border: 1px solid var(--glass-border); font-size: 0.9em;">
+                <i class="fa-solid fa-crosshairs"></i> Use My Current Location
+            </button>
+        </div>
+
+        <!-- Severity -->
+        <div style="margin-bottom: 20px;">
+            <label
+                style="display: block; color: var(--text-muted); font-size: 0.9em; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">
+                <i class="fa-solid fa-gauge-high"></i> Severity
+            </label>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                <label class="severity-card"
+                    style="cursor: pointer; padding: 14px; border-radius: 12px; border: 1px solid #ffdd57; text-align: center; transition: all 0.2s; background: rgba(255,221,87,0.05);">
+                    <input type="radio" name="severity" value="low" style="display:none;"
+                        onchange="selectSeverity(this)">
+                    <i class="fa-solid fa-circle"
+                        style="color: #ffdd57; font-size: 1.4em; display: block; margin-bottom: 6px;"></i>
+                    <strong style="color: #ffdd57; display: block;">Low</strong>
+                    <span style="color: var(--text-muted); font-size: 0.78em;">Suspicious activity</span>
+                </label>
+                <label class="severity-card"
+                    style="cursor: pointer; padding: 14px; border-radius: 12px; border: 1px solid #ff8c00; text-align: center; transition: all 0.2s; background: rgba(255,140,0,0.05);">
+                    <input type="radio" name="severity" value="medium" style="display:none;"
+                        onchange="selectSeverity(this)">
+                    <i class="fa-solid fa-circle"
+                        style="color: #ff8c00; font-size: 1.4em; display: block; margin-bottom: 6px;"></i>
+                    <strong style="color: #ff8c00; display: block;">Medium</strong>
+                    <span style="color: var(--text-muted); font-size: 0.78em;">Harassment / Threat</span>
+                </label>
+                <label class="severity-card"
+                    style="cursor: pointer; padding: 14px; border-radius: 12px; border: 1px solid var(--danger); text-align: center; transition: all 0.2s; background: rgba(255,8,68,0.05);">
+                    <input type="radio" name="severity" value="high" style="display:none;"
+                        onchange="selectSeverity(this)">
+                    <i class="fa-solid fa-circle"
+                        style="color: var(--danger); font-size: 1.4em; display: block; margin-bottom: 6px;"></i>
+                    <strong style="color: var(--danger); display: block;">High</strong>
+                    <span style="color: var(--text-muted); font-size: 0.78em;">Physical danger</span>
+                </label>
+            </div>
+            <!-- Hidden required field for severity validation -->
+            <input type="text" id="severity_check" style="display:none;" required>
+        </div>
+
+        <!-- Description -->
+        <div style="margin-bottom: 30px;">
+            <label
+                style="display: block; color: var(--text-muted); font-size: 0.9em; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">
+                <i class="fa-solid fa-pen-to-square"></i> Description
+            </label>
+            <textarea name="description" placeholder="Describe what happened or what you observed..." required
+                style="width: 100%; min-height: 100px; resize: vertical; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; padding: 14px; color: var(--text-main); font-family: inherit; font-size: 0.95em;"></textarea>
+        </div>
+
+        <button type="submit" class="btn-primary"
+            style="width: 100%; padding: 16px; background: linear-gradient(135deg, #ff8c00, var(--danger));">
+            <i class="fa-solid fa-paper-plane"></i> Submit Incident Report
+        </button>
+    </form>
+
+    <p style="color: var(--text-muted); font-size: 0.82em; text-align: center; margin-top: 20px;">
+        <i class="fa-solid fa-lock"></i> Reports are anonymous. Your identity is never shown on the map.
+    </p>
+</div>
+
+<script>
+    function useCurrentLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(pos => {
+                document.getElementById('inc_lat').value = pos.coords.latitude.toFixed(6);
+                document.getElementById('inc_lon').value = pos.coords.longitude.toFixed(6);
+            }, () => alert('Could not get your location. Please enter manually.'));
+        }
+    }
+
+    function selectSeverity(radio) {
+        document.getElementById('severity_check').value = radio.value;
+        document.querySelectorAll('.severity-card').forEach(card => {
+            card.style.boxShadow = 'none';
+            card.style.transform = 'none';
+        });
+        const chosen = radio.closest('.severity-card');
+        chosen.style.boxShadow = '0 0 20px rgba(255,255,255,0.1)';
+        chosen.style.transform = 'scale(1.03)';
+    }
+</script>
+{% endblock %}

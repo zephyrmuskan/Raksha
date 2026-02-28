@@ -1,0 +1,388 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap');
+
+:root {
+    --primary: #ff007f;
+    --primary-glow: rgba(255, 0, 127, 0.4);
+    --secondary: #7928ca;
+    --secondary-glow: rgba(121, 40, 202, 0.4);
+    --success: #00f2fe;
+    --success-glow: rgba(0, 242, 254, 0.4);
+    --danger: #ff0844;
+    --danger-glow: rgba(255, 8, 68, 0.6);
+    --bg-dark: #0a0a0a;
+    --glass-bg: rgba(20, 20, 20, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --text-main: #ffffff;
+    --text-muted: #a0a0a0;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Outfit', sans-serif;
+}
+
+body {
+    background-color: var(--bg-dark);
+    background-image:
+        radial-gradient(circle at 15% 50%, rgba(121, 40, 202, 0.15), transparent 25%),
+        radial-gradient(circle at 85% 30%, rgba(255, 0, 127, 0.15), transparent 25%);
+    background-attachment: fixed;
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+/* Base Glassmorphism Class */
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Navigation */
+nav {
+    width: 100%;
+    padding: 15px 40px;
+    background: rgba(10, 10, 10, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--glass-border);
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+nav a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.05em;
+    padding: 8px 16px;
+    border-radius: 12px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+nav a::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+}
+
+nav a:hover {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+nav a:hover::after {
+    width: 80%;
+}
+
+nav form button {
+    margin: 0;
+    padding: 8px 24px;
+    font-size: 1em;
+    font-weight: 600;
+    border-radius: 12px;
+    background: transparent;
+    border: 1px solid var(--glass-border);
+    color: var(--text-muted);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+nav form button:hover {
+    color: var(--danger);
+    border-color: var(--danger);
+    background: rgba(255, 8, 68, 0.1);
+    box-shadow: 0 0 15px var(--danger-glow);
+}
+
+hr {
+    display: none;
+}
+
+/* Typography */
+h1,
+h2,
+h3 {
+    margin-bottom: 20px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    background: linear-gradient(to right, #fff, var(--text-muted));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-align: center;
+    margin: 40px auto 30px;
+}
+
+h2 {
+    font-size: 2rem;
+    text-align: center;
+}
+
+/* Forms */
+form:not(#sos-form) {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    padding: 40px;
+    border-radius: 24px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    width: 90%;
+    max-width: 480px;
+    margin: 40px auto;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+form:not(#sos-form):hover {
+    transform: translateY(-5px);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+label {
+    display: block;
+    text-align: left;
+    margin-bottom: 8px;
+    font-weight: 400;
+    color: var(--text-muted);
+    font-size: 0.95em;
+}
+
+input {
+    width: 100%;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--text-main);
+    font-size: 1.05em;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+input:focus {
+    background: rgba(0, 0, 0, 0.5);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(255, 0, 127, 0.15);
+}
+
+input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* Buttons */
+.btn-primary,
+button[type="submit"]:not(#sos-button):not(nav button),
+li button {
+    padding: 16px 32px;
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    font-weight: 700;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 100%;
+    box-shadow: 0 10px 20px var(--primary-glow);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary:hover,
+button[type="submit"]:not(#sos-button):not(nav button):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 30px rgba(255, 0, 127, 0.6);
+}
+
+/* SOS Button Magic */
+#sos-form {
+    margin: 60px auto;
+    text-align: center;
+}
+
+#sos-button {
+    background: linear-gradient(135deg, var(--danger), #ff4d4d) !important;
+    width: 280px !important;
+    height: 280px !important;
+    border-radius: 50% !important;
+    font-size: 4.5em !important;
+    font-weight: 800 !important;
+    letter-spacing: 2px;
+    border: none;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 0 60px var(--danger-glow), inset 0 0 20px rgba(255, 255, 255, 0.5) !important;
+    animation: sosPulse 2s infinite cubic-bezier(0.66, 0, 0, 1);
+    transition: transform 0.1s;
+}
+
+#sos-button:active {
+    transform: scale(0.95) !important;
+}
+
+@keyframes sosPulse {
+    to {
+        box-shadow: 0 0 0 60px rgba(255, 8, 68, 0), inset 0 0 20px rgba(255, 255, 255, 0.5);
+    }
+}
+
+/* Lists (Trusted Contacts) */
+ul {
+    list-style: none;
+    max-width: 700px;
+    width: 90%;
+    margin: 40px auto;
+}
+
+li {
+    background: var(--glass-bg);
+    padding: 24px 30px;
+    margin-bottom: 20px;
+    border-radius: 20px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+li:hover {
+    transform: translateX(5px);
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(30, 30, 30, 0.7);
+}
+
+.contact-info strong {
+    font-size: 1.2em;
+    display: block;
+    margin-bottom: 5px;
+    color: var(--text-main);
+}
+
+.contact-info span {
+    font-size: 0.9em;
+    color: var(--text-muted);
+    display: block;
+}
+
+li button {
+    width: auto;
+    padding: 12px 24px;
+    font-size: 0.95em;
+    background: transparent;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    box-shadow: none;
+    border-radius: 12px;
+}
+
+li button:hover {
+    background: rgba(255, 8, 68, 0.1);
+    box-shadow: 0 0 20px var(--danger-glow);
+    transform: none;
+}
+
+/* Links */
+a.action-link {
+    display: table;
+    margin: 20px auto;
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+    padding: 12px 24px;
+    border-radius: 12px;
+    background: rgba(255, 0, 127, 0.1);
+    border: 1px solid rgba(255, 0, 127, 0.2);
+    transition: all 0.3s ease;
+}
+
+a.action-link:hover {
+    background: rgba(255, 0, 127, 0.2);
+    box-shadow: 0 0 20px var(--primary-glow);
+    transform: translateY(-2px);
+}
+
+.help-text {
+    text-align: center;
+    margin-top: 20px;
+    color: var(--text-muted);
+}
+
+.help-text a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.help-text a:hover {
+    text-decoration: underline;
+}
+
+/* Dashboard Cards */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    max-width: 1200px;
+    width: 90%;
+    margin: 40px auto;
+}
+
+.dash-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    padding: 30px;
+    backdrop-filter: blur(16px);
+    transition: transform 0.3s ease;
+}
+
+.dash-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.dash-card h3 {
+    font-size: 1.4em;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Map specific */
+#map {
+    border-radius: 24px;
+    overflow: hidden;
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}

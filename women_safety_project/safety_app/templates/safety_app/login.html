@@ -1,0 +1,24 @@
+{% extends 'safety_app/base.html' %}
+{% load static %}
+
+{% block content %}
+<div style="display: flex; justify-content: center; align-items: center; min-height: 80vh;">
+    <form method="post" style="width: 100%; max-width: 450px;">
+        <h2 style="color: var(--primary); text-align: center; margin-bottom: 30px;"><i
+                class="fa-solid fa-right-to-bracket"></i> Welcome Back</h2>
+
+        {% csrf_token %}
+
+        <!-- We use form.as_p but will rely on CSS to style the inputs. To make it perfect, we can wrap the rendering or just let our global CSS handle it, which it does. -->
+        <div style="margin-bottom: 20px;">
+            {{ form.as_p }}
+        </div>
+
+        <button type="submit" class="btn-primary" style="margin-top: 10px;">Login to Aurora</button>
+
+        <div class="help-text" style="margin-top: 25px;">
+            Don't have an account? <a href="{% url 'register' %}">Create one now</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
